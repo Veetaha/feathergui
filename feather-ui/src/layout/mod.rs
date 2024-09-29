@@ -19,10 +19,10 @@ pub trait Layout<Imposed, AppData>: DynClone {
 
 dyn_clone::clone_trait_object!(<Imposed, AppData> Layout<Imposed, AppData>);
 
-pub trait Desc<AppData: 'static> {
+pub trait Desc<AppData> {
     type Props: Clone;
     type Impose: Clone;
-    type Children<A: DynClone + ?Sized>: Clone + 'static;
+    type Children<A: DynClone + ?Sized>: Clone;
 
     /// Resolves a pending layout into a resolved node, which contains a pointer to the R-tree
     fn stage(
@@ -34,19 +34,19 @@ pub trait Desc<AppData: 'static> {
     fn fake_stage(
         props: &Self::Props,
         area: AbsRect,
-        children: &Self::Children<dyn Layout<Self::Impose, AppData>>,
+        children: &Self::Children<dyn Layout<Self::Impose, AppData> + '_>,
     ) -> () {
     }
 }
 
 #[derive_where(Clone)]
-pub struct Node<AppData: 'static, D: Desc<AppData>, Imposed: Clone> {
+pub struct Node<AppData, D: Desc<AppData>, Imposed: Clone> {
     props: D::Props,
     imposed: Imposed,
     children: D::Children<dyn Layout<D::Impose, AppData>>,
 }
 
-impl<AppData: 'static, D: Desc<AppData>, Imposed: Clone> Layout<Imposed, AppData>
+impl<AppData, D: Desc<AppData>, Imposed: Clone> Layout<Imposed, AppData>
     for Node<AppData, D, Imposed>
 {
     fn get_imposed(&self) -> &Imposed {
@@ -67,7 +67,7 @@ pub trait Staged<AppData>: DynClone {
 dyn_clone::clone_trait_object!(<AppData> Staged<AppData>);
 
 #[derive_where(Clone)]
-struct Concrete<AppData: 'static> {
+struct Concrete<AppData> {
     render: im::Vector<RenderInstruction>,
     area: AbsRect,
     rtree: Rc<rtree::Node<AppData>>,
